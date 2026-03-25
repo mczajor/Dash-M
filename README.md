@@ -64,3 +64,6 @@ Architektura rozwiązania składa się z kilku głównych warstw. Aplikacja uruc
 ## 10. Podsumowanie i wnioski
 
 ## 11. Bibliografia
+1. The Kubernetes Authors, *Production-Grade Container Scheduling and Management*, [https://kubernetes.io/](https://kubernetes.io/)
+2. OpenTelemetry Authors, *OpenTelemetry Astronomy Shop, a microservice-based distributed system intended to illustrate the implementation of OpenTelemetry in a near real-world environment*, [https://opentelemetry.io/docs/demo/](https://opentelemetry.io/docs/demo/)
+3. Grafana Labs, *Grafana Assistant*, [https://grafana.com/docs/grafana-cloud/machine-learning/assistant/](https://grafana.com/docs/grafana-cloud/machine-learning/assistant/)
