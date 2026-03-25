@@ -1,0 +1,17 @@
+---
+icons:
+    - name: logos
+      url: https://unpkg.com/@iconify-json/logos@1/icons.json
+---
+architecture-beta
+    service k8s(logos:kubernetes)[Application]
+    service otel(logos:opentelemetry-icon)[Observability]
+    service grafana(logos:grafana)[Monitoring]
+
+    service mcp(server)[MCP Server]
+    service llm(server)[LLM]
+
+    k8s:R --> L:otel
+    otel:R --> L:grafana
+    llm:B <--> T:mcp
+    mcp:B <--> T:grafana

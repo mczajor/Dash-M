@@ -45,6 +45,8 @@ Zebrane dane telemetryczne będą wizualizowane w **Grafanie** w postaci dashboa
 ## 4. Wysokopoziomowa architektura
 Architektura rozwiązania składa się z kilku głównych warstw. Aplikacja uruchomiona w klastrze Kubernetes generuje dane telemetryczne zbierane przez OpenTelemetry. Dane te trafiają do warstwy observability, gdzie są przetwarzane i przechowywane. Następnie są one wizualizowane w Grafanie w formie dashboardów. Proces tworzenia i zarządzania dashboardami wspierany jest przez Grafana Assistant wykorzystujący model LLM.
 
+<img src="docs/high-level-architecture.svg" alt="Wysokopoziomowa architektura" width="500"/>
+
 ## 5. Szczegółowa architektura
 
 ## 6. Opis konfiguracji środowiska
