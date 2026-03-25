@@ -8,6 +8,8 @@
 
 **2026, grupa 3**
 
+---
+
 ## Spis treści
 1. [Wstęp](#1-wstęp) <!-- Introduction -->
 2. [Podłoże teoretyczne / stack technologiczny](#2-podłoże-teoretyczne--stack-technologiczny) <!-- Theoretical background/technology stack -->
@@ -20,6 +22,8 @@
 9. [Opis demo](#9-opis-demo) <!-- Demo description a. Execution procedure b. Results presentation – All prompts used with AI models should be listed, screens from Grafana dashboard should be attached. -->
 10. [Podsumowanie i wnioski](#10-podsumowanie-i-wnioski) <!-- Summary – conclusions -->
 11. [Bibliografia](#11-bibliografia) <!-- References -->
+
+---
 
 ## 1. Wstęp
 Celem projektu jest zaprezentowanie wykorzystania narzędzi observability oraz wsparcia modeli AI w procesie monitorowania aplikacji działającej w środowisku chmurowym. W projekcie zostanie wykorzystana przykładowa aplikacja **Astronomy Shop**, która będzie generować dane telemetryczne wizualizowane następnie w systemie monitoringu.
