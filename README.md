@@ -49,9 +49,70 @@ Architektura rozwiązania składa się z kilku głównych warstw. Aplikacja uruc
 
 ## 5. Szczegółowa architektura
 
+Architektura projektu składa się z czterech warstw:
+
+**Warstwa aplikacyjna – AWS EKS.** Astronomy Shop uruchomiona jest w klastrze **Amazon EKS**. Każdy mikroserwis działa jako osobny Deployment w przestrzeni nazw `astronomy-shop` i jest instrumentowany przez **OpenTelemetry SDK**, generując metryki, logi oraz ślady (traces).
+
+**Warstwa zbierania danych – Grafana Alloy.** Alloy działa jako agent zbierający dane telemetryczne z mikroserwisów przez protokół **OTLP**. Przetwarza dane i przesyła je do odpowiednich backendów w Grafana Cloud: metryki do Mimira, logi do Loki, ślady do Tempo.
+
+**Warstwa przechowywania danych – Grafana Cloud.** Dane przechowywane są w zarządzanych usługach Grafana Cloud: **Mimir** (metryki), **Loki** (logi) i **Tempo** (ślady). Komunikacja z klastra odbywa się przez HTTPS z uwierzytelnianiem tokenem API.
+
+**Warstwa wizualizacji – Grafana.** Grafana stanowi interfejs do analizy danych w formie dashboardów budowanych zapytaniami PromQL, LogQL i TraceQL. Tworzenie dashboardów wspierane jest przez **Grafana Assistant**, który na podstawie promptów użytkownika w języku naturalnym generuje gotowe panele.
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                      AWS EKS Cluster                    │
+│  ┌────────────────────────────────────────────────────┐ │
+│  │  Namespace: astronomy-shop                         │ │
+│  │  frontend · cartservice · checkoutservice · ...    │ │
+│  │           (OTLP SDK instrumentation)               │ │
+│  └───────────────────┬────────────────────────────────┘ │
+│                      │ OTLP                             │
+│  ┌───────────────────▼────────────────────────────────┐ │
+│  │  Namespace: monitoring – Grafana Alloy             │ │
+│  └───────────┬──────────────────────────┬─────────────┘ │
+└──────────────┼──────────────────────────┼───────────────┘
+               │ HTTPS                    │ HTTPS
+               ▼                          ▼
+┌──────────────────────────┐  ┌──────────────────────────┐
+│     Grafana Cloud        │  │     Grafana Cloud         │
+│  Mimir  · Loki · Tempo   │  │  Grafana (UI + Assistant) │
+└──────────────────────────┘  └──────────────────────────┘
+```
+
 ## 6. Opis konfiguracji środowiska
 
+### Wymagania wstępne
+
+Do uruchomienia środowiska wymagane są następujące narzędzia zainstalowane lokalnie: `aws cli`, `eksctl`, `kubectl` oraz `helm`. Wymagane jest również konto **AWS** z uprawnieniami do tworzenia zasobów EKS, EC2, IAM i VPC, a także konto **Grafana Cloud**.
+
+### Klaster AWS EKS
+
+Środowisko demonstracyjne uruchamiane jest w regionie **us-east-1** z grupą węzłów opartych na instancjach **t3.medium** (3 węzły).
+
+### Grafana Cloud
+
+W panelu Grafana Cloud należy utworzyć nowy stos oraz wygenerować token API z uprawnieniami do zapisu metryk, logów i śladów. Adresy endpointów Mimira, Loki i Tempo są następnie używane w konfiguracji Alloy.
+
+### Grafana Alloy
+
+Alloy konfigurowany jest plikiem w formacie River, który definiuje pipeline zbierania danych: odbiór przez OTLP, przetwarzanie wsadowe i eksport do odpowiednich backendów Grafana Cloud. Dane uwierzytelniające przechowywane są jako Kubernetes Secret.
+
+### Astronomy Shop
+
+Aplikacja wdrażana jest przez oficjalny chart Helm z repozytorium OpenTelemetry. Wbudowany kolektor OpenTelemetry zostaje wyłączony, a endpoint OTLP mikroserwisów przekierowany na adres wewnętrznego serwisu Alloy w klastrze.
+
 ## 7. Metoda instalacji
+
+Instalacja przebiega w czterech kolejnych krokach.
+
+**Krok 1 – Przygotowanie klastra EKS.** Po skonfigurowaniu AWS CLI z danymi dostępowymi konta, klaster EKS tworzony jest poleceniem `eksctl create cluster` z przygotowanym plikiem konfiguracyjnym. Proces trwa ok. 15–20 minut, po czym `eksctl` automatycznie aktualizuje lokalny plik `kubeconfig`.
+
+**Krok 2 – Wdrożenie Astronomy Shop.** Aplikacja instalowana jest przez Helm z oficjalnego repozytorium OpenTelemetry Demo. Podczas instalacji wbudowany kolektor jest wyłączany, a endpoint OTLP przekierowany na adres Alloy wewnątrz klastra.
+
+**Krok 3 – Instalacja Grafana Alloy.** Alloy instalowany jest przez Helm z repozytorium Grafana. Przed instalacją tworzone są: Kubernetes Secret z danymi uwierzytelniającymi Grafana Cloud oraz ConfigMap z plikiem konfiguracyjnym Alloy.
+
+**Krok 4 – Weryfikacja.** Po wdrożeniu poprawność integracji weryfikowana jest w Grafana Cloud przez sekcję **Explore** – sprawdzany jest napływ metryk (Mimir), logów (Loki) oraz śladów (Tempo) z przestrzeni nazw `astronomy-shop`.
 
 ## 8. Kroki wzdrożenia demo
 ### a. Przygotowanie konfiguracji
