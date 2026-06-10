@@ -115,8 +115,87 @@ Instalacja przebiega w czterech kolejnych krokach.
 **Krok 4 – Weryfikacja.** Po wdrożeniu poprawność integracji weryfikowana jest w Grafana Cloud przez sekcję **Explore** – sprawdzany jest napływ metryk (Mimir), logów (Loki) oraz śladów (Tempo) z przestrzeni nazw `astronomy-shop`.
 
 ## 8. Kroki wzdrożenia demo
+
 ### a. Przygotowanie konfiguracji
+
+**Krok 1 – Utworzenie klastra EKS.**
+
+```bash
+eksctl create cluster \
+  --name dash-m \
+  --region us-east-1 \
+  --nodegroup-name standard-workers \
+  --node-type t3.medium \
+  --nodes 3 \
+  --managed
+```
+
+Po zakończeniu `eksctl` automatycznie aktualizuje lokalny `kubeconfig`. Weryfikacja węzłów:
+
+```bash
+kubectl get nodes
+```
+
+**Krok 2 – Utworzenie przestrzeni nazw i Secret z danymi Grafana Cloud.**
+
+```bash
+kubectl create namespace dash-m
+
+kubectl create secret generic grafana-cloud-otlp \
+  --namespace dash-m \
+  --from-literal=username="<INSTANCE_ID>" \
+  --from-literal=password="<GRAFANA_CLOUD_TOKEN_glc_...>"
+```
+
+Wartości `INSTANCE_ID` (numeryczne ID stosu) oraz token `glc_...` pochodzą ze strony **OpenTelemetry → Configure** w stosie Grafana Cloud.
+
 ### b. Przygotowanie danych
+
+**Krok 3 – Instalacja Grafana Alloy.**
+
+```bash
+helm repo add grafana https://grafana.github.io/helm-charts
+helm repo update
+
+helm install alloy grafana/alloy \
+  --namespace dash-m \
+  --values dash_m.yaml
+```
+
+Plik `dash_m.yaml` zawiera konfigurację Alloy (format River): odbiór OTLP, przetwarzanie wsadowe i eksport do bramy OTLP Grafana Cloud. Przed instalacją należy uzupełnić w nim `<REGION>` endpointu.
+
+**Krok 4 – Wdrożenie Astronomy Shop.**
+
+```bash
+helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
+helm repo update
+
+helm install astronomy-shop open-telemetry/opentelemetry-demo \
+  --namespace dash-m \
+  --set default.env[0].name=OTEL_EXPORTER_OTLP_ENDPOINT \
+  --set default.env[0].value=http://alloy.dash-m.svc.cluster.local:4318 \
+  --set opentelemetry-collector.enabled=false \
+  --set jaeger.enabled=false \
+  --set prometheus.enabled=false \
+  --set grafana.enabled=false \
+  --set opensearch.enabled=false
+```
+
+Mikroserwisy wysyłają dane OTLP bezpośrednio do serwisu Alloy w klastrze, a wbudowane backendy demo (kolektor, Jaeger, Prometheus, Grafana, OpenSearch) są wyłączone.
+
+**Krok 5 – Weryfikacja wdrożenia.**
+
+```bash
+kubectl get pods -n dash-m
+```
+
+Wszystkie pody mikroserwisów oraz pod Alloy powinny mieć status `Running`. Dostęp do sklepu w celu wygenerowania ruchu:
+
+```bash
+kubectl port-forward -n dash-m svc/frontend-proxy 8080:8080
+```
+
+Sklep dostępny jest pod adresem `http://localhost:8080/`. Napływ danych weryfikowany jest w Grafana Cloud przez sekcję **Explore** dla źródeł Mimir (metryki), Loki (logi) i Tempo (ślady).
 
 ## 9. Opis demo
 

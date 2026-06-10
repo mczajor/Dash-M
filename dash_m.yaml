@@ -1,0 +1,93 @@
+# =============================================================================
+# dash_m.yaml — wartości Helm dla Grafana Alloy (namespace: dash-m)
+# =============================================================================
+# Rola: Alloy działa jako agent OTLP. Odbiera metryki, logi i ślady z
+#       mikroserwisów Astronomy Shop, przetwarza je wsadowo i eksportuje
+#       do bramy OTLP Grafana Cloud, która rozdziela sygnały do:
+#         - Mimir  (metryki)
+#         - Loki   (logi)
+#         - Tempo  (ślady)
+#
+# WYMAGANIA WSTĘPNE
+#   Przed instalacją utwórz Secret z danymi uwierzytelniającymi Grafana Cloud.
+#   Wartości pochodzą ze strony "OpenTelemetry -> Configure" w stosie
+#   Grafana Cloud (instanceID = numeryczne ID stosu, token = glc_...):
+#
+#     kubectl create secret generic grafana-cloud-otlp \
+#       --namespace dash-m \
+#       --from-literal=username="<INSTANCE_ID>" \
+#       --from-literal=password="<GRAFANA_CLOUD_TOKEN_glc_...>"
+#
+#   Uzupełnij też <REGION> w endpoincie poniżej (np. prod-eu-west-2),
+#   widoczny na tej samej stronie konfiguracyjnej Grafana Cloud.
+# =============================================================================
+
+alloy:
+  # Wystaw porty OTLP, aby mikroserwisy mogły wysyłać dane do Alloy.
+  extraPorts:
+    - name: otlp-grpc
+      port: 4317
+      targetPort: 4317
+      protocol: TCP
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318
+      protocol: TCP
+
+  # Wstrzyknięcie danych uwierzytelniających z Secret jako zmienne środowiskowe.
+  extraEnv:
+    - name: GRAFANA_CLOUD_USER
+      valueFrom:
+        secretKeyRef:
+          name: grafana-cloud-otlp
+          key: username
+    - name: GRAFANA_CLOUD_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: grafana-cloud-otlp
+          key: password
+
+  # Konfiguracja Alloy w formacie River.
+  configMap:
+    content: |-
+      logging {
+        level  = "info"
+        format = "logfmt"
+      }
+
+      // ---- Odbiór OTLP (gRPC + HTTP) z mikroserwisów Astronomy Shop ----
+      otelcol.receiver.otlp "default" {
+        grpc {
+          endpoint = "0.0.0.0:4317"
+        }
+        http {
+          endpoint = "0.0.0.0:4318"
+        }
+        output {
+          metrics = [otelcol.processor.batch.default.input]
+          logs    = [otelcol.processor.batch.default.input]
+          traces  = [otelcol.processor.batch.default.input]
+        }
+      }
+
+      // ---- Przetwarzanie wsadowe ----
+      otelcol.processor.batch "default" {
+        output {
+          metrics = [otelcol.exporter.otlphttp.grafanacloud.input]
+          logs    = [otelcol.exporter.otlphttp.grafanacloud.input]
+          traces  = [otelcol.exporter.otlphttp.grafanacloud.input]
+        }
+      }
+
+      // ---- Eksport do bramy OTLP Grafana Cloud ----
+      otelcol.exporter.otlphttp "grafanacloud" {
+        client {
+          endpoint = "https://otlp-gateway-<REGION>.grafana.net/otlp"
+          auth     = otelcol.auth.basic.grafanacloud.handler
+        }
+      }
+
+      otelcol.auth.basic "grafanacloud" {
+        username = sys.env("GRAFANA_CLOUD_USER")
+        password = sys.env("GRAFANA_CLOUD_TOKEN")
+      }
