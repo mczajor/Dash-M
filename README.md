@@ -249,7 +249,62 @@ Logs datasource: "grafanacloud-bravedinghy520-logs"
 Traces datasource: "grafanacloud-bravedinghy520-traces"
 ```
 
-<!--TODO: Example Prompts and Responses-->
+---
+
+Przykładowe szczegółowe zapytanie:
+
+> Jesteś ekspertem SRE i asystentem observability. Twoim zadaniem jest automatyczne zaprojektowanie i utworzenie kompletnego dashboardu w Grafanie dla aplikacji **OpenTelemetry Astronomy Shop** (przestrzeń nazw `dash-m`).
+> Będziesz korzystał z udostępnionych Ci narzędzi MCP, aby samodzielnie złożyć i utworzyć ten dashboard w moim systemie.
+> **Ścisły kontekst techniczny - użyj wyłącznie tych źródeł i dokładnie tego przedziału czasu:**
+> * Absolute time range: {"from":"2026-06-04T11:29:51.000Z","to":"2026-06-05T11:51:29.000Z"}
+> * Metrics datasource: "grafanacloud-bravedinghy520-prom"
+> * Logs datasource: "grafanacloud-bravedinghy520-logs"
+> * Traces datasource: "grafanacloud-bravedinghy520-traces"
+> 
+> **Wymagania dotyczące dashboardu:**
+> Nazwij go **"Astronomy Shop - Podsumowanie Systemu"**. Samodzielnie wymyśl optymalne zapytania PromQL, LogQL oraz TraceQL/Search i ułóż je w 4 przejrzyste panele:
+> 1. **Kondycja serwisów (CPU):** Wykres pokazujący tempo zużycia procesora w podziale na wszystkie mikroserwisy aplikacji.
+> 2. **Ruch w systemie (HTTP):** Wykres pokazujący liczbę żądań HTTP na sekundę (wskaźnik rate) dla każdego mikroserwisu.
+> 3. **Dziennik Awarii (Logi):** Panel logów wyświetlający wyłącznie komunikaty o błędach (np. poziom error, wyjątki, fail) z całej aplikacji.
+> 4. **Wąskie gardła (Traces):** Tabela śladów pokazująca najwolniejsze operacje w systemie (np. zapytania do bazy lub wywołania API trwające powyżej 100ms).
+> 
+> Użyj narzędzi MCP do zbudowania i wysłania tego dashboardu. Po zakończeniu potwierdź jego utworzenie i opisz krótko, jakie zapytania zastosowałeś pod maską.
+
+Odpowiedź modelu **Claude Sonnet 4.6 Medium Thinking**:
+
+> Świetnie, mam narzędzia. Zacznę od eksploracji dostępnych metryk w datasource Prometheus, aby dobrać optymalne zapytania.Mam UIDs datasource'ów. Teraz sprawdzam dostępne metryki CPU i HTTP.Znalazłem wszystkie mikroserwisy. Teraz weryfikuję metryki CPU i HTTP dla namespace `dash-m`.Doskonale! Logi błędów działają. Teraz sprawdzam strukturę traces w Tempo.Mam wszystkie dane. Teraz buduję i wysyłam kompletny dashboard do Grafany!✅ **Dashboard utworzony pomyślnie!**
+>
+> ## 📊 Astronomy Shop - Podsumowanie Systemu
+>
+> Dashboard jest dostępny pod adresem:
+> **`/d/astronomy-shop-summary/astronomy-shop-podsumowanie-systemu`**
+> 
+> ### Co zrobiłem krok po kroku
+> 
+> **Faza eksploracji (zanim napisałem cokolwiek):**
+> 
+> 1. Odpytałem `list_datasources` → odkryłem rzeczywiste UID datasource'ów (`grafanacloud-prom`, `grafanacloud-logs`, `grafanacloud-traces`)
+> 2. Wyszukałem metryki CPU (`k8s_pod_cpu_time_seconds_total`) i HTTP (`http_server_request_duration_seconds_count`)
+> 3. Zidentyfikowałem label `k8s_namespace_name="dash-m"` oraz 22 mikroserwisy (accounting, ad, cart, checkout, currency, email, flagd, fraud-detection, frontend, frontend-proxy, image-provider, kafka, llm, load-generator, payment, postgresql, product-catalog, product-reviews, quote, recommendation, shipping, valkey-cart)
+> 4. Przetestowałem zapytania LogQL → odkryłem, że logi błędów są indeksowane z `severity_text="Error"` i `detected_level="error"`
+> 5. Przetestowałem TraceQL → potwierdziłem realne ślady >100ms z namespace `dash-m`
+> 
+> ### Zastosowane zapytania
+> 
+> | Panel | Technologia | Zapytanie |
+> |-------|-------------|-----------|
+> | **🖥️ CPU** | PromQL | `sum by (k8s_deployment_name) (rate(k8s_pod_cpu_time_seconds_total{k8s_namespace_name="dash-m"}[5m]))` |
+> | **🌐 HTTP** | PromQL | `sum by (k8s_deployment_name) (rate(http_server_request_duration_seconds_count{k8s_namespace_name="dash-m"}[5m]))` |
+> | **🚨 Logi** | LogQL | `{k8s_namespace_name="dash-m"} \| json \| severity_text =~ "(?i)(ERROR\|FATAL\|CRITICAL)"` |
+> | **⏱️ Traces** | TraceQL | `{ resource.k8s.namespace.name = "dash-m" && duration > 100ms }` (limit: 20) |
+> 
+> **Ciekawostka odkryta podczas eksploracji:** serwis `accounting` generuje prawdziwe błędy — `duplicate key value violates unique constraint "order_pkey"` (widoczne w panelu logów). W panelu traces widać, że operacje `order-consumed` potrafią trwać nawet **37 sekund**, co jest wyraźnym wąskim gardłem systemu.
+
+Wygenerowany dashboard dla przykładowego zapytania:
+
+<img src="docs/grafana-sonnet-dashboard.png" alt='Wygenerowany dashboard w Grafana Cloud' width="1000"/>
+
+---
 
 Widok z aplikacji klienta pozwala na wprowadzanie zapytań w języku naturalnym do modelu LLM jest przedstawiony poniżej.
 
@@ -257,7 +312,7 @@ Widok z aplikacji klienta pozwala na wprowadzanie zapytań w języku naturalnym 
 
 W rezultacie działania modelu wykorzystującego narzędzia MCP, w naszej instancji powstaje gotowy do analizy dashboard.
 
-<img src="docs/grafana-dashboard.png" alt='Wygenerowany dashboard w Grafana Cloud' width="1000"/>
+<img src="docs/grafana-dashboard.png" alt='Dashboard wygenerowany przez "Claude Sonnet 4.6 Medium Thinking" w Grafana Cloud' width="1000"/>
 
 ## 10. Podsumowanie i wnioski
 
