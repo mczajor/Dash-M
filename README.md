@@ -161,15 +161,22 @@ Lista zintegrowanych narzędzi udostępnianych przez serwer MCP:
 <img src="docs/claude-grafana-mcp-tools.png" alt='Lista dostępnych narzędzi rozszerzenie "grafana-mcp-server" w Claude Desktop' width="1000"/>
 
 ### b. Prezentacja wyników
+Przed przystąpieniem do generowania dashboardów przydatne będzie określenie kontekstu danych, na których chcemy operować. Poniższe parametry definiują ramy czasowe oraz identyfikatory źródeł danych w Grafana Cloud dla uruchomionej wcześniej aplikacji. Pomoże to agentowi AI w generowaniu precyzyjnych zapytań.
 
-```
+```text
 Absolute time range: {"from":"2026-06-04T11:29:51.000Z","to":"2026-06-05T11:51:29.000Z"}
 Metrics datasource: "grafanacloud-bravedinghy520-prom"
 Logs datasource: "grafanacloud-bravedinghy520-logs"
 Traces datasource: "grafanacloud-bravedinghy520-traces"
 ```
 
+<!--TODO: Example Prompts and Responses-->
+
+Widok z aplikacji klienta pozwala na wprowadzanie zapytań w języku naturalnym do modelu LLM jest przedstawiony poniżej.
+
 <img src="docs/claude-chat.png" alt='Przykładowe zapytanie w Claude Desktop generujące nowy dashboard' width="1000"/>
+
+W rezultacie działania modelu wykorzystującego narzędzia MCP, w naszej instancji powstaje gotowy do analizy dashboard.
 
 <img src="docs/grafana-dashboard.png" alt='Wygenerowany dashboard w Grafana Cloud' width="1000"/>
 
