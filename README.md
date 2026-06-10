@@ -211,7 +211,7 @@ Na początku musimy utworzyć **Service Account** w panelu Grafana Cloud. Konto 
 
 <img src="docs/grafana-service-account.png" alt='Widok "Create service account" w Grafana Cloud' width="1000"/>
 
-Następnie przechodzimy do aplikacji Claude Desktop. W ustawieniach wybieramy zakładkę **Extensions** i w podkategorii **Connectors** wyszukujemy pozycję **Grafana MCP server**.
+Następnie przechodzimy do aplikacji Claude Desktop. W ustawieniach wybieramy zakładkę **Extensions** i w podkategorii **Connectors** wyszukujemy pozycję **Grafana MCP Server**.
 
 <img src="docs/claude-connectors.png" alt='Widok "Connectors" w Claude Desktop' width="1000"/>
 
