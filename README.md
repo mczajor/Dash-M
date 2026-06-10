@@ -45,7 +45,7 @@ Zebrane dane telemetryczne będą wizualizowane w **Grafanie** w postaci dashboa
 ## 4. Wysokopoziomowa architektura
 Architektura rozwiązania składa się z kilku głównych warstw. Aplikacja uruchomiona w klastrze Kubernetes generuje dane telemetryczne zbierane przez OpenTelemetry. Dane te trafiają do warstwy observability, gdzie są przetwarzane i przechowywane. Następnie są one wizualizowane w Grafanie w formie dashboardów. Proces tworzenia i zarządzania dashboardami wspierany jest przez Grafana Assistant wykorzystujący model LLM.
 
-<img src="docs/high-level-architecture.svg" alt="Wysokopoziomowa architektura" width="500"/>
+<img src="docs/high-level-architecture.svg" alt='Wysokopoziomowa architektura' width="500"/>
 
 ## 5. Szczegółowa architektura
 
@@ -119,8 +119,59 @@ Instalacja przebiega w czterech kolejnych krokach.
 ### b. Przygotowanie danych
 
 ## 9. Opis demo
+
+W ramach demonstracji wykorzystujemy aplikację [**Claude Desktop**](https://code.claude.com/docs/en/desktop-quickstart) jako klienta dla serwera [**Grafana MCP**](https://github.com/grafana/mcp-grafana). Środowisko to pozwala na darmowy dostęp do dużego modelu językowego **Sonnet 4.6**. Aplikacja Claude Desktop jest popularnym i aktualnie rozwijanym narzędziem oferującym szereg ułatwień w pracy z narzędziami AI. W naszym projekcie wykorzystamy **Extensions**, które znacząco upraszczają konfigurację oraz integrację z serwerem MCP.
+
 ### a. Procedura wykonania
+
+Proces integracji i przygotowania środowiska demonstracyjnego składa się z kilku kroków.
+
+Na początku musimy utworzyć **Service Account** w panelu Grafana Cloud. Konto to musi posiadać odpowiednie uprawnienia dla naszego projektu, niezbędne do autentykacji agenta AI.
+
+<img src="docs/grafana-access.png" alt='Widok "Users and access" w Grafana Cloud' width="1000"/>
+
+<img src="docs/grafana-service-account.png" alt='Widok "Create service account" w Grafana Cloud' width="1000"/>
+
+Następnie przechodzimy do aplikacji Claude Desktop. W ustawieniach wybieramy zakładkę **Extensions** i w podkategorii **Connectors** wyszukujemy pozycję **Grafana MCP server**.
+
+<img src="docs/claude-connectors.png" alt='Widok "Connectors" w Claude Desktop' width="1000"/>
+
+Kolejnym krokiem jest instalacja rozszerzenia i jego konfiguracja. Wymagane jest podanie adresu URL naszej instancji Grafany (np. `https://bravedinghy520.grafana.net`). Po wpisaniu adresu wklejamy wygenerowany wcześniej w Grafanie token dostępowy i zapisujemy zmiany.
+
+<img src="docs/claude-grafana-mcp-server.png" alt='Widok "grafana-mcp-server" w Claude Desktop' width="1000"/>
+
+Przed rozpoczęciem testów upewniamy się, że rozszerzenie jest aktywne zarówno w samej aplikacji, jak i w aktualnej konwersacji. W tym celu klikamy ikonę plusa, a następnie wybieramy **Connectors**. Po poprawnym wykonaniu tych kroków możemy rozpocząć interakcję z modelem, który zyskuje dostęp do poniższych narzędzi.
+
+Lista zintegrowanych narzędzi udostępnianych przez serwer MCP:
+* **Dashboards:** Wyszukiwanie, pobieranie, aktualizacja i tworzenie dashboardów z optymalizacją okna kontekstowego.
+* **Datasources:** Wyświetlanie i odpytywanie źródeł danych takich jak Prometheus, Loki i ClickHouse.
+* **Prometheus:** Wykonywanie zapytań PromQL, analiza percentyli w histogramach i pobieranie metadanych.
+* **Loki:** Odpytywanie logów i metryk przy użyciu LogQL oraz wykrywanie wzorców.
+* **ClickHouse:** Wykonywanie zapytań SQL oraz odkrywanie tabel i schematów.
+* **Alerting:** Zarządzanie regułami alertów i punktami kontaktowymi.
+* **Incidents:** Zarządzanie incydentami w usłudze Grafana Incident.
+* **Sift:** Badanie błędów i problemów z wydajnością.
+* **OnCall:** Zarządzanie harmonogramami dyżurów i grupami alertów.
+* **Pyroscope:** Ciągłe profilowanie aplikacji za pomocą wykresów płomieniowych (flame graphs).
+* **Navigation:** Generowanie precyzyjnych linków do zasobów Grafany.
+* **Annotations:** Tworzenie i aktualizacja adnotacji.
+* **Admin:** Zarządzanie zespołami, użytkownikami, rolami i uprawnieniami.
+* **Rendering:** Generowanie zrzutów ekranu paneli w formacie PNG.
+
+<img src="docs/claude-grafana-mcp-tools.png" alt='Lista dostępnych narzędzi rozszerzenie "grafana-mcp-server" w Claude Desktop' width="1000"/>
+
 ### b. Prezentacja wyników
+
+```
+Absolute time range: {"from":"2026-06-04T11:29:51.000Z","to":"2026-06-05T11:51:29.000Z"}
+Metrics datasource: "grafanacloud-bravedinghy520-prom"
+Logs datasource: "grafanacloud-bravedinghy520-logs"
+Traces datasource: "grafanacloud-bravedinghy520-traces"
+```
+
+<img src="docs/claude-chat.png" alt='Przykładowe zapytanie w Claude Desktop generujące nowy dashboard' width="1000"/>
+
+<img src="docs/grafana-dashboard.png" alt='Wygenerowany dashboard w Grafana Cloud' width="1000"/>
 
 ## 10. Podsumowanie i wnioski
 
