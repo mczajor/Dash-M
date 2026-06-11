@@ -314,6 +314,10 @@ W rezultacie działania modelu wykorzystującego narzędzia MCP, w naszej instan
 
 <img src="docs/grafana-dashboard.png" alt='Dashboard wygenerowany przez "Claude Sonnet 4.6 Medium Thinking" w Grafana Cloud' width="1000"/>
 
+**Porównanie z Grafana Assistant**
+
+<img src="docs/grafana-assistant-generated-dashboard.png" alt='Dashboard wygenerowany przez Grafana Assistant w Grafana Cloud' width="1000"/>
+
 ## 10. Podsumowanie i wnioski
 
 ### Podsumowanie
