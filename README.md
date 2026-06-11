@@ -316,6 +316,36 @@ W rezultacie działania modelu wykorzystującego narzędzia MCP, w naszej instan
 
 ## 10. Podsumowanie i wnioski
 
+### Podsumowanie
+
+Projekt **Dash-M** zrealizował kompletny łańcuch observability dla aplikacji mikroserwisowej **OpenTelemetry Astronomy Shop** uruchomionej w klastrze **Amazon EKS** w regionie `us-east-1`. Architektura rozwiązania obejmuje cztery warstwy opisane w sekcjach 4-5: aplikację instrumentowaną przez **OpenTelemetry SDK**, agenta zbierającego **Grafana Alloy** (konfiguracja River w pliku `dash_m.yaml`), zarządzany backend **Grafana Cloud** (Mimir, Loki, Tempo) oraz warstwę wizualizacji w **Grafanie** wspieraną przez modele językowe poprzez protokół **MCP**.
+
+Wdrożenie przebiegło zgodnie z opisem w sekcjach 7-8. Mikroserwisy w przestrzeni nazw `dash-m` wysyłają dane OTLP bezpośrednio do Alloy, który po przetworzeniu wsadowym eksportuje je przez HTTPS do bramy OTLP Grafana Cloud. Wbudowane komponenty demo (kolektor OpenTelemetry, Jaeger, Prometheus, Grafana, OpenSearch) zostały wyłączone na rzecz scentralizowanego, zarządzanego backendu observability. Ruch użytkowników generowany jest przez aplikację dostępną przez `kubectl port-forward`, a poprawność napływu danych weryfikowana jest w sekcji **Explore** Grafany.
+
+Drugim filarem projektu jest wykorzystanie **sztucznej inteligencji** w procesie tworzenia dashboardów. Zamiast ręcznego definiowania paneli i zapytań PromQL, LogQL czy TraceQL, zintegrowano **Claude Desktop** (model **Sonnet 4.6**) z serwerem **Grafana MCP** poprzez mechanizm **Extensions → Connectors**. Agent AI uzyskał dostęp do narzędzi umożliwiających eksplorację źródeł danych, wykonywanie zapytań oraz tworzenie i publikowanie dashboardów w Grafana Cloud.
+
+Demonstracja potwierdziła, że model LLM - przy odpowiednio sformułowanym kontekście (źródła danych, przedział czasowy, przestrzeń nazw) - potrafi samodzielnie:
+- odkryć strukturę metryk (np. `k8s_pod_cpu_time_seconds_total`, `http_server_request_duration_seconds_count`),
+- zidentyfikować 22 mikroserwisy w namespace `dash-m`,
+- zaprojektować i przetestować zapytania **PromQL**, **LogQL** i **TraceQL**,
+- zbudować i opublikować gotowy dashboard **„Astronomy Shop - Podsumowanie Systemu"** z czterema panelami (CPU, ruch HTTP, logi błędów, wolne ślady).
+
+W trakcie eksploracji danych model wykrył rzeczywiste problemy operacyjne aplikacji: błędy duplikacji kluczy w serwisie `accounting` (`duplicate key value violates unique constraint "order_pkey"`) oraz operacje `order-consumed` trwające nawet **37 sekund** - co potwierdza praktyczną wartość połączenia observability z asystentem AI.
+
+Repozytorium zawiera pełną dokumentację wdrożenia (`README.md`), jedyny plik konfiguracyjny infrastruktury (`dash_m.yaml`) oraz materiały wizualne w katalogu `docs/` - diagram architektury, zrzuty ekranu konfiguracji MCP i wygenerowanych dashboardów.
+
+### Wnioski
+
+1. **OpenTelemetry i Grafana Alloy jako ustandaryzowany pipeline telemetrii.** Połączenie **OpenTelemetry SDK** z agentem **Grafana Alloy** stanowi sprawdzony sposób zbierania trzech sygnałów observability (metryki, logi, ślady) przez jeden protokół **OTLP**. Centralizacja eksportu w Alloy upraszcza konfigurację mikroserwisów - wystarczy ustawić zmienną `OTEL_EXPORTER_OTLP_ENDPOINT` na wewnętrzny adres serwisu Alloy. Konfiguracja w formacie **River** (`dash_m.yaml`) jest czytelna i łatwa do utrzymania.
+
+2. **Grafana Cloud jako alternatywa dla self-hosted stacku.** Wykorzystanie zarządzanych usług **Mimir**, **Loki** i **Tempo** eliminuje narzut operacyjny związany z utrzymaniem niezależnych instancji Prometheus, Jaeger czy Elasticsearch. Wyłączenie wbudowanych backendów w Helm charcie Astronomy Shop potwierdza, że architektura produkcyjna może opierać się wyłącznie na zewnętrznym, zarządzanym backendzie observability.
+
+3. **MCP jako most między LLM a Grafaną.** Integracja przez protokół **Model Context Protocol** (serwer **Grafana MCP** + klient **Claude Desktop**) znacząco obniża barierę wejścia w tworzenie dashboardów. Model nie tylko generuje zapytania, ale najpierw eksploruje dostępne metryki, testuje je i dopiero na tej podstawie buduje panele - podejście zbliżone do pracy doświadczonego inżyniera SRE. Skuteczność tego procesu zależy jednak od precyzyjnego kontekstu przekazanego w prompcie (identyfikatory datasource'ów, przedział czasowy, namespace), co podkreśla ciągłą rolę człowieka w nadzorowaniu pracy agenta AI.
+
+4. **Praktyczna wartość observability wykryta przez AI.** Demonstracja pokazała, że asystent AI wyposażony w narzędzia MCP nie ogranicza się do generowania wizualizacji - potrafi identyfikować rzeczywiste anomalie (błędy bazy danych, wąskie gardła wydajnościowe) na podstawie logów i śladów. To potwierdza potencjał łączenia observability z modelami językowymi w codziennej pracy zespołów operacyjnych.
+
+5. **Ograniczenia i perspektywy rozwoju.** Projekt celowo koncentruje się na demonstracji koncepcji, dlatego wdrożenie jest w pełni ręczne (brak CI/CD, Infrastructure as Code oraz testów automatycznych). W środowisku produkcyjnym wymagane byłyby dodatkowe mechanizmy: reguły alertowania, definicje SLO/SLI, bezpieczne zarządzanie sekretami (np. External Secrets Operator) oraz kontrola kosztów Grafana Cloud. Kolejnym krokiem rozwoju mogłoby być wykorzystanie pozostałych narzędzi MCP (alerting, OnCall, Sift, Pyroscope) do automatycznej analizy incydentów oraz formalizacja wdrożenia w Terraform lub Helmfile z pipeline'em GitHub Actions.
+
 ## 11. Bibliografia
 1. The Kubernetes Authors, *Production-Grade Container Scheduling and Management*, [https://kubernetes.io/](https://kubernetes.io/)
 2. OpenTelemetry Authors, *OpenTelemetry Astronomy Shop, a microservice-based distributed system intended to illustrate the implementation of OpenTelemetry in a near real-world environment*, [https://opentelemetry.io/docs/demo/](https://opentelemetry.io/docs/demo/)
